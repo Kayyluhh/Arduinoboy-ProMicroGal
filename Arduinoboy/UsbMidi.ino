@@ -6,23 +6,6 @@ void usbMidiSendRTMessage(uint8_t b) {};
 void usbMidiHandleSysEx(const uint8_t *data, uint16_t length, bool complete) {};
 void usbMidiInit() {};
 void usbMidiUpdate() {};
-
-#ifdef USE_LEONARDO
-// Send a USB-MIDI packet only when a host has actually enumerated us.
-// MidiUSB.sendMIDI()/flush() block until the host drains the endpoint, so on
-// battery/DIN-only power (no USB data connection) they would hang the whole
-// loop and take the DIN path down with them. Guarding on USBDevice.configured()
-// keeps USB fully working when a computer is attached while letting the box run
-// standalone. DIN (Serial1) is unaffected and always runs.
-void sendUsbMidiPacket(midiEventPacket_t packet)
-{
-  if (USBDevice.configured()) {
-    MidiUSB.sendMIDI(packet);
-    MidiUSB.flush();
-  }
-}
-#endif
-
 #else
 
 void usbMidiSendTwoByteMessage(uint8_t b1, uint8_t b2)

@@ -82,7 +82,8 @@ boolean checkLSDJStopped()
 #endif
 #ifdef USE_LEONARDO
       midiEventPacket_t event = {0x0F, 0xFC};
-      sendUsbMidiPacket(event);
+      MidiUSB.sendMIDI(event);
+      MidiUSB.flush();
 #endif
       sequencerStop();                          //call the global sequencer stop function
     }
@@ -112,9 +113,11 @@ void sendMidiClockSlaveFromLSDJ()
 #endif
 #ifdef USE_LEONARDO
       midiEventPacket_t event = {0x09, 0x90 | memory[MEM_LSDJMASTER_MIDI_CH] + 1, readGbSerialIn, 0x7F};
-      sendUsbMidiPacket(event);
+      MidiUSB.sendMIDI(event);
+      MidiUSB.flush();
       event = {0x0F, 0xFA};
-      sendUsbMidiPacket(event);
+      MidiUSB.sendMIDI(event);
+      MidiUSB.flush();
 #endif
       sequencerStart();             //call the global sequencer start function
     }
@@ -125,7 +128,8 @@ void sendMidiClockSlaveFromLSDJ()
 #endif
 #ifdef USE_LEONARDO
     midiEventPacket_t event = {0x0F, 0xF8};
-    sendUsbMidiPacket(event);
+    MidiUSB.sendMIDI(event);
+    MidiUSB.flush();
 #endif
     countGbClockTicks=0;            //Reset the bit counter
     readGbSerialIn = 0x00;                //Reset our serial read value

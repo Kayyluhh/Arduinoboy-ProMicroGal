@@ -46,7 +46,8 @@ void modeLSDJMidiout()
 #endif
 #ifdef USE_LEONARDO
              packet = {0x0F, 0xF8};
-             sendUsbMidiPacket(packet);
+             MidiUSB.sendMIDI(packet);
+             MidiUSB.flush();
 #endif
                  break;
            case 0x7E: //seq stop
@@ -56,7 +57,8 @@ void modeLSDJMidiout()
 #endif
 #ifdef USE_LEONARDO
              packet = {0x0F, 0xFC};
-             sendUsbMidiPacket(packet);
+             MidiUSB.sendMIDI(packet);
+             MidiUSB.flush();
 #endif
              stopAllNotes();
              break;
@@ -67,7 +69,8 @@ void modeLSDJMidiout()
 #endif
 #ifdef USE_LEONARDO
              packet = {0x0F, 0xFA};
-             sendUsbMidiPacket(packet);
+             MidiUSB.sendMIDI(packet);
+             MidiUSB.flush();
 #endif
              break;
            default:
@@ -136,7 +139,8 @@ void stopNote(byte m)
 #endif
 #ifdef USE_LEONARDO
     midiEventPacket_t packet = { 0x08, 0x80 | memory[MEM_MIDIOUT_NOTE_CH + m], midioutNoteHold[m][x], 0 };
-    sendUsbMidiPacket(packet);
+    MidiUSB.sendMIDI(packet);
+    MidiUSB.flush();
 #endif
   }
   midiOutLastNote[m] = -1;
@@ -154,7 +158,8 @@ void playNote(byte m, byte n)
 #endif
 #ifdef USE_LEONARDO
   midiEventPacket_t packet = { 0x09, 0x90 | memory[MEM_MIDIOUT_NOTE_CH + m], n, 127 };
-  sendUsbMidiPacket(packet);
+  MidiUSB.sendMIDI(packet);
+  MidiUSB.flush();
 #endif
 
   midioutNoteHold[m][midioutNoteHoldCounter[m]] =n;
@@ -182,7 +187,8 @@ void playCC(byte m, byte n)
 #endif
 #ifdef USE_LEONARDO
     midiEventPacket_t packet = {0x0B, 0xB0 | (memory[MEM_MIDIOUT_NOTE_CH + m]+1), (memory[MEM_MIDIOUT_CC_NUMBERS + n]), v};
-    sendUsbMidiPacket(packet);
+    MidiUSB.sendMIDI(packet);
+    MidiUSB.flush();
 #endif
   } else {
     if(memory[MEM_MIDIOUT_CC_SCALING+m]) {
@@ -200,7 +206,8 @@ void playCC(byte m, byte n)
 #endif
 #ifdef USE_LEONARDO
     midiEventPacket_t packet = {0x0B, 0xB0 | (memory[MEM_MIDIOUT_NOTE_CH + m]+1), (memory[MEM_MIDIOUT_CC_NUMBERS + n]), v};
-    sendUsbMidiPacket(packet);
+    MidiUSB.sendMIDI(packet);
+    MidiUSB.flush();
 #endif
   }
 }
@@ -215,7 +222,8 @@ void playPC(byte m, byte n)
 #endif
 #ifdef USE_LEONARDO
   midiEventPacket_t packet = {0x0C, 0xC0 | (memory[MEM_MIDIOUT_NOTE_CH + m]+1), n};
-  sendUsbMidiPacket(packet);
+  MidiUSB.sendMIDI(packet);
+  MidiUSB.flush();
 #endif
 }
 
@@ -234,7 +242,8 @@ void stopAllNotes()
 #endif
 #ifdef USE_LEONARDO
     midiEventPacket_t packet = {0x0B, 0xB0 | memory[MEM_MIDIOUT_NOTE_CH + m], 123, 127};
-    sendUsbMidiPacket(packet);
+    MidiUSB.sendMIDI(packet);
+    MidiUSB.flush();
 #endif
   }
 }
