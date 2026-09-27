@@ -31,7 +31,7 @@ void programmerSendSettings()
   sysexData[0] = 0xF0;
   sysexData[1] = sysexManufacturerId;
   sysexData[2] = 0x40;
-  memcpy(&sysexData[3], memory, MEM_MAX+1);
+  memcpy(&sysexData[3], memory, MEM_MAX);
   sysexData[MEM_MAX+3] = 0xF7;
   serial->write(sysexData, MEM_MAX+4);
 #ifdef USE_TEENSY
@@ -51,7 +51,7 @@ void setProgrammerRequestConnect()
 void setProgrammerMemorySave()
 {
   byte offset = 2;
-  for(byte m=4;m<=MEM_MAX;m++) {
+  for(byte m=MEM_FORCE_MODE;m<MEM_MAX;m++) {
     memory[m] = sysexData[offset];
     offset++;
   }
