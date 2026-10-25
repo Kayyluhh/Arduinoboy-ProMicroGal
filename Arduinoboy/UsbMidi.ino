@@ -8,18 +8,56 @@ void usbMidiInit() {};
 void usbMidiUpdate() {};
 
 #ifdef USE_LEONARDO
-// Send a USB-MIDI packet only when a host has actually enumerated us.
-// MidiUSB.sendMIDI()/flush() block until the host drains the endpoint, so on
-// battery/DIN-only power (no USB data connection) they would hang the whole
-// loop and take the DIN path down with them. Guarding on USBDevice.configured()
-// keeps USB fully working when a computer is attached while letting the box run
-// standalone. DIN (Serial1) is unaffected and always runs.
+// Non-blocking USB-MIDI send, so DIN and USB can both run at the same time.
+//
+// Why: on AVR, MidiUSB.sendMIDI() calls USB_Send() (ArduinoCore-avr USBCore.cpp),
+// which waits in 1 ms steps, up to 250 ms, for room in the IN endpoint whenever
+// the host isn't draining it (enumerated, but no app reading the port, or the
+// host is busy/asleep). MIDIUSB's own "drop instead of block" check is defined
+// as (1) on AVR, so it never drops. Every one of those waits freezes the whole
+// mode loop: DIN output and Game Boy clock handling included.
+//
+// What this does instead:
+//  - not enumerated or suspended: skip USB entirely (DIN unaffected)
+//  - endpoint has room: send immediately (a listening host drains it fast)
+//  - endpoint full: wait at most USB_MIDI_MAX_WAIT_US once; if it's still full,
+//    mark the host as stalled and drop packets with no waiting until the
+//    endpoint frees up again (checked on every send, so recovery is automatic)
+
+// The endpoint number is a protected member of PluggableUSBModule. A pointer to
+// that member, taken inside a derived class, can legally be applied to the
+// MidiUSB object without modifying the library.
+struct MidiUsbEndpoint : MIDI_ {
+  static uint8_t tx() {
+    return MidiUSB.*(&MidiUsbEndpoint::pluggedEndpoint) + 1; // IN endpoint = plugged + 1
+  }
+};
+
+const unsigned long USB_MIDI_MAX_WAIT_US = 1000;
+bool usbMidiHostStalled = false;
+
 void sendUsbMidiPacket(midiEventPacket_t packet)
 {
-  if (USBDevice.configured()) {
-    MidiUSB.sendMIDI(packet);
-    MidiUSB.flush();
+  if (!USBDevice.configured() || USBDevice.isSuspended()) {
+    usbMidiHostStalled = false;   // re-probe from scratch on next connect/wake
+    return;
   }
+
+  const uint8_t ep = MidiUsbEndpoint::tx();
+  if (USB_SendSpace(ep) < sizeof(packet)) {
+    if (usbMidiHostStalled) return;          // host still not reading: drop, don't wait
+    const unsigned long start = micros();
+    while (USB_SendSpace(ep) < sizeof(packet)) {
+      if (micros() - start > USB_MIDI_MAX_WAIT_US) {
+        usbMidiHostStalled = true;           // give up on this packet
+        return;
+      }
+    }
+  }
+
+  usbMidiHostStalled = false;
+  MidiUSB.sendMIDI(packet);                  // room confirmed, so USB_Send won't wait
+  MidiUSB.flush();
 }
 #endif
 
